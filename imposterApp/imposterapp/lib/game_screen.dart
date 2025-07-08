@@ -20,8 +20,10 @@ class _GameScreenState extends State<GameScreen> {
   List<String> words = [];
   Map<String, String> playerWordMap = {};
   int currentIndex = 0;
-  bool wordRevealed = false;
   String startingPlayer = '';
+
+  bool wordRevealed = false;   // <== zeigt, ob Spieler sein Wort schon sieht
+  bool showReady = false;      // <== zeigt, ob "Spieler XY fängt an" angezeigt wird
 
   @override
   void initState() {
@@ -73,44 +75,59 @@ class _GameScreenState extends State<GameScreen> {
     final name = widget.playerNames[currentIndex];
     final word = playerWordMap[name]!;
 
+    bool isLastPlayer = currentIndex == widget.playerNames.length - 1;
+
     return Scaffold(
       appBar: AppBar(title: const Text("Imposter Game")),
       body: Center(
-        child: wordRevealed && currentIndex == widget.playerNames.length - 1
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text("Alle Spieler haben ihr Wort!", style: TextStyle(fontSize: 22)),
-                  const SizedBox(height: 20),
-                  Text("🔔 $startingPlayer fängt an", style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 40),
-                  ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("Zurück zum Menü"),
-                  )
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Spieler: $name", style: const TextStyle(fontSize: 22)),
-                  const SizedBox(height: 20),
-                  if (!wordRevealed)
-                    ElevatedButton(
-                      onPressed: () => setState(() => wordRevealed = true),
-                      child: const Text("Wort anzeigen"),
-                    )
-                  else ...[
-                    Text(word, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 30),
-                    ElevatedButton(
-                      onPressed: _nextPlayer,
-                      child: const Text("Weitergeben"),
-                    )
-                  ]
-                ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!wordRevealed) ...[
+              Text("Spieler: $name", style: const TextStyle(fontSize: 22)),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () => setState(() => wordRevealed = true),
+                child: const Text("Wort anzeigen"),
               ),
+            ] else if (!isLastPlayer) ...[
+              Text(word, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    currentIndex++;
+                    wordRevealed = false;
+                  });
+                },
+                child: const Text("Weitergeben"),
+              ),
+            ] else if (!showReady) ...[
+              Text(word, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    showReady = true;
+                  });
+                },
+                child: const Text("Weitergeben"),
+              ),
+            ] else ...[
+              const Text("Alle Spieler haben ihr Wort!", style: TextStyle(fontSize: 22)),
+              const SizedBox(height: 20),
+              Text("🔔 $startingPlayer fängt an",
+                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 40),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Zurück zum Menü"),
+              )
+            ],
+          ],
+        ),
       ),
     );
   }
+
 }

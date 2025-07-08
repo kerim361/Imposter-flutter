@@ -6,4 +6,7 @@ Future<List<String>> loadWordsFromCategory(String categoryFile) async {
     .map((e) => e.trim())
     .where((e) => e.isNotEmpty)
     .toList();
+    
 }
+
+

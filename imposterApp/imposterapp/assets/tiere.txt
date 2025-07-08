@@ -1,292 +1,223 @@
-
-Apfel
-
-Baum
-
-Haus
+Hund
 
 Katze
 
-Hund
-
-Tisch
-
-Stuhl
-
-Buch
-
-Auto
-
-Blume
-
-Kind
-
-Frau
-
-Mann
-
-Vogel
+Maus
 
 Pferd
 
-Maus
+Kuh
 
-Tür
+Schwein
 
-Fenster
+Schaf
 
-Wand
+Ziege
 
-Dach
+Huhn
 
-Fluss
+Ente
 
-Berg
+Gans
 
-Tal
+Truthahn
 
-See
+Kaninchen
 
-Meer
+Meerschweinchen
 
-Insel
+Hamster
 
-Sand
+Fisch
 
-Stein
+Vogel
 
-Baum
+Adler
 
-Ast
+Falke
 
-Blatt
+Eule
 
-Gras
+Spatz
 
-Blume
+Meise
 
-Wurzel
+Amsel
 
-Frucht
+Drossel
 
-Same
+Krähe
 
-Topf
+Rabe
 
-Schale
+Taube
 
-Korb
+Schwan
 
-Tasche
+Flamingo
 
-Hut
+Pinguin
 
-Hemd
+Strauß
 
-Hose
+Krokodil
 
-Kleid
+Alligator
 
-Rock
+Schlange
 
-Schuh
+Eidechse
 
-Socke
+Schildkröte
 
-Mütze
+Frosch
 
-Mantel
+Kröte
 
-Jacke
+Salamander
 
-Schal
+Qualle
 
-Handschuh
+Seestern
 
-Brille
+Krebs
 
-Uhr
+Hummer
 
-Kette
+Garnele
 
-Ring
+Muschel
 
-Ohrring
+Schnecke
 
-Armband
+Wurm
 
-Kamm
+Spinne
 
-Bürste
+Biene
 
-Seife
+Ameise
 
-Handtuch
+Schmetterling
 
-Spiegel
+Mücke
 
-Zahn
+Fliege
 
-Auge
+Käfer
 
-Nase
+Marienkäfer
 
-Mund
+Grille
 
-Ohr
+Heuschrecke
 
-Hals
+Libelle
 
-Kopf
+Skorpion
 
-Haar
+Tausendfüßler
 
-Gesicht
+Hundertfüßler
 
-Hand
+Elefant
 
-Finger
+Löwe
 
-Fuß
+Tiger
 
-Zeh
+Bär
 
-Knie
+Wolf
 
-Bein
+Fuchs
 
-Arm
+Hirsch
 
-Schulter
+Reh
 
-Bauch
+Wildschwein
 
-Rücken
+Affe
 
-Herz
+Gorilla
 
-Blut
+Schimpanse
 
-Knochen
+Zebra
 
-Muskel
+Giraffe
 
-Haut
+Nashorn
 
-Atem
+Nilpferd
 
-Stimme
+Känguru
 
-Lachen
+Koala
 
-Weinen
+Panda
 
-Schrei
+Eisbär
 
-Flüster
+Robbe
 
-Gesang
+Wal
 
-Musik
+Delfin
 
-Lied
+Hai
 
-Ton
+Oktopus
 
-Klang
+Tintenfisch
 
-Rhythmus
+Seepferdchen
 
-Melodie
+Otter
 
-Tanz
+Biber
 
-Schritt
+Dachs
 
-Sprung
+Marder
 
-Lauf
+Eichhörnchen
 
-Gang
+Igel
 
-Weg
+Maulwurf
 
-Pfad
+Fledermaus
 
-Straße
+Esel
 
-Platz
+Kamel
 
-Brücke
+Lama
 
-Turm
+Alpaka
 
-Kirche
+Yak
 
-Schloss
+Büffel
 
-Ruine
+Bison
 
-Mauer
+Gnu
 
-Zaun
+Antilope
 
-Tor
+Gazelle
 
-Tür
+Leopard
 
-Schlüssel
+Jaguar
 
-Schloss
+Puma
 
-Kiste
+Gepard
 
-Box
+Hyäne
 
-Deckel
-
-Boden
-
-Seite
-
-Ecke
-
-Mitte
-
-Rand
-
-Kreis
-
-Quadrat
-
-Dreieck
-
-Form
-
-Farbe
-
-Licht
-
-Schatten
-
-Dunkelheit
-
-Tag
-
-Nacht
-
-Morgen
-
-Abend
-
-Mittag
-
-Mitternacht
-
-Stunde
-
-Minute
-
-Sekunde
-
-Woche
+Schakal
