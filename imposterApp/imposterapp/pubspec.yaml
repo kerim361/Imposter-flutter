@@ -52,10 +52,15 @@ dev_dependencies:
 # The following section is specific to Flutter packages.
 flutter:
 
+
   assets:
     - assets/obst.txt
     - assets/tiere.txt
     - assets/berufe.txt
+    - assets/hint-obst.txt
+    - assets/hint-tiere.txt
+    - assets/hint-berufe.txt
+
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'word_loader.dart';
+import 'hint_data.dart';
 
 class GameScreen extends StatefulWidget {
   final List<String> playerNames;
-  final String categoryFile;
+  final List<String> categoryFiles;
 
   const GameScreen({
     super.key,
     required this.playerNames,
-    required this.categoryFile,
+    required this.categoryFiles,
   });
 
   @override
@@ -19,11 +19,16 @@ class GameScreen extends StatefulWidget {
 class _GameScreenState extends State<GameScreen> {
   List<String> words = [];
   Map<String, String> playerWordMap = {};
+  List<String> randomizedOrder = [];
   int currentIndex = 0;
-  String startingPlayer = '';
+  late String startingPlayer;
 
-  bool wordRevealed = false;   // <== zeigt, ob Spieler sein Wort schon sieht
-  bool showReady = false;      // <== zeigt, ob "Spieler XY fängt an" angezeigt wird
+  bool wordVisible = false;
+  bool showReady = false;
+
+  final Color primary = const Color(0xFFD11149);
+  final Color secondary = const Color(0xFFE6C229);
+  final Color accent = Colors.black;
 
   @override
   void initState() {
@@ -32,102 +37,202 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   Future<void> _startGame() async {
-    final loadedWords = await loadWordsFromCategory(widget.categoryFile);
-    if (loadedWords.isEmpty) {
-      throw Exception("Keine Wörter in Datei gefunden.");
+    final random = Random();
+    final allWordHintPairs = <MapEntry<String, String>>[];
+
+    for (var file in widget.categoryFiles) {
+      final hintFile = 'hint-$file';
+      final pairs = await loadWordHintPairs(file, hintFile);
+      allWordHintPairs.addAll(pairs);
     }
 
-    final random = Random();
-    final selectedWord = loadedWords[random.nextInt(loadedWords.length)];
+    if (allWordHintPairs.isEmpty) {
+      throw Exception("Keine Wort-Hinweis-Paare in den Kategorien gefunden.");
+    }
+
+    randomizedOrder = List.from(widget.playerNames)..shuffle();
+    startingPlayer = randomizedOrder[random.nextInt(randomizedOrder.length)];
+
+    final selected = allWordHintPairs[random.nextInt(allWordHintPairs.length)];
+    final selectedWord = selected.key;
+    final selectedHint = selected.value;
+
     final impostorIndex = random.nextInt(widget.playerNames.length);
 
     for (int i = 0; i < widget.playerNames.length; i++) {
       final name = widget.playerNames[i];
-      playerWordMap[name] = i == impostorIndex ? "IMPOSTER" : selectedWord;
+      playerWordMap[name] =
+          i == impostorIndex ? "🕵️ Hinweis: $selectedHint" : selectedWord;
     }
-
-    startingPlayer = widget.playerNames[random.nextInt(widget.playerNames.length)];
 
     setState(() {
-      words = loadedWords;
+      words = allWordHintPairs.map((e) => e.key).toList();
     });
-  }
-
-  void _nextPlayer() {
-    if (currentIndex < widget.playerNames.length - 1) {
-      setState(() {
-        currentIndex++;
-        wordRevealed = false;
-      });
-    } else {
-      setState(() {
-        wordRevealed = true; // alle fertig, zeige Abschluss
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (words.isEmpty || playerWordMap.isEmpty) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        backgroundColor: primary,
+        body: const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
     }
 
-    final name = widget.playerNames[currentIndex];
+    final name = randomizedOrder[currentIndex];
     final word = playerWordMap[name]!;
-
-    bool isLastPlayer = currentIndex == widget.playerNames.length - 1;
+    final isImpostor = word.startsWith("🕵️");
+    final isLastPlayer = currentIndex == randomizedOrder.length - 1;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Imposter Game")),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: primary,
+        title: const Text("🕹️ Imposter Game",
+            style: TextStyle(color: Colors.white)),
+        centerTitle: true,
+      ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (!wordRevealed) ...[
-              Text("Spieler: $name", style: const TextStyle(fontSize: 22)),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => setState(() => wordRevealed = true),
-                child: const Text("Wort anzeigen"),
-              ),
-            ] else if (!isLastPlayer) ...[
-              Text(word, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    currentIndex++;
-                    wordRevealed = false;
-                  });
-                },
-                child: const Text("Weitergeben"),
-              ),
-            ] else if (!showReady) ...[
-              Text(word, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  setState(() {
-                    showReady = true;
-                  });
-                },
-                child: const Text("Weitergeben"),
-              ),
-            ] else ...[
-              const Text("Alle Spieler haben ihr Wort!", style: TextStyle(fontSize: 22)),
-              const SizedBox(height: 20),
-              Text("🔔 $startingPlayer fängt an",
-                  style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 40),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Zurück zum Menü"),
-              )
-            ],
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: showReady
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "✅ Alle Spieler haben ihr Wort!",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      "🔔 $startingPlayer fängt an",
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.w700,
+                        color: primary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 40),
+                    ElevatedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.home, size: 24),
+                      label: const Text(
+                        "Zurück zum Menü",
+                        style: TextStyle(fontSize: 18),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("👤 Spieler: $name",
+                        style: const TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 20),
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: wordVisible
+                          ? Card(
+                              key: const ValueKey(true),
+                              color: isImpostor ? primary : Colors.white,
+                              elevation: 8,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 32),
+                                child: Text(
+                                  word,
+                                  style: TextStyle(
+                                    fontSize: 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: isImpostor
+                                        ? Colors.white
+                                        : Colors.black,
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Card(
+                              key: const ValueKey(false),
+                              color: secondary,
+                              elevation: 8,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 32, vertical: 32),
+                                child: Text("🃏 Karte verdeckt",
+                                    style: TextStyle(
+                                        fontSize: 20,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w500)),
+                              ),
+                            ),
+                    ),
+                    const SizedBox(height: 30),
+                    ElevatedButton.icon(
+                      icon: Icon(wordVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility),
+                      label: Text(wordVisible ? "Zudecken" : "Aufdecken"),
+                      onPressed: () =>
+                          setState(() => wordVisible = !wordVisible),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.arrow_forward),
+                      label: const Text("Nächster Spieler"),
+                      onPressed: () {
+                        if (!isLastPlayer) {
+                          setState(() {
+                            currentIndex++;
+                            wordVisible = false;
+                          });
+                        } else {
+                          setState(() {
+                            wordVisible = false;
+                            showReady = true;
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: secondary,
+                        foregroundColor: Colors.black,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );
   }
-
 }
