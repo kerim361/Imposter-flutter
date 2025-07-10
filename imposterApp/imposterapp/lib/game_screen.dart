@@ -210,9 +210,15 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  Widget _buildReadyScreen() {
-    return Column(
+
+Widget _buildReadyScreen() {
+  return Center(
+    child: Column(
+      // Damit die Column nur so hoch wie nötig ist
+      mainAxisSize: MainAxisSize.min,
+      // Vertikale Zentrierung innerhalb der Column
       mainAxisAlignment: MainAxisAlignment.center,
+      // Horizontale Zentrierung der Kinder
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         ElevatedButton(
@@ -226,29 +232,33 @@ class _GameScreenState extends State<GameScreen> {
             backgroundColor: secondary,
             foregroundColor: Colors.black,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
           ),
         ),
         const SizedBox(height: 16),
         if (showImpostors && impostorNames.isNotEmpty) ...[
           Text(
             "${t('imposterIs')}: ${impostorNames.join(', ')}",
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+                fontSize: 20, fontWeight: FontWeight.w600),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
         ],
         Text(
           t('allPlayersReady'),
-          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              fontSize: 26, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
         Text(
           "🔔 $startingPlayer ${t('startsFirst')}",
           style: TextStyle(
-              fontSize: 30, fontWeight: FontWeight.w700, color: primary),
+              fontSize: 30,
+              fontWeight: FontWeight.w700,
+              color: primary),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 48),
@@ -262,14 +272,17 @@ class _GameScreenState extends State<GameScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: primary,
             foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 32, vertical: 18),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16)),
           ),
         ),
       ],
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildCardContent(bool highlight, String? text) {
     const cardWidth = 300.0;
