@@ -7,13 +7,15 @@ import 'strings.dart';
 class GameScreen extends StatefulWidget {
   final List<String> playerNames;
   final List<String> categoryFiles;
-  final int impostorCount; // Anzahl der Impostoren
+  final int impostorCount;      // Anzahl der Impostoren
+  final bool hintEnabled;       // Neu: Ob Impostoren einen Hinweis erhalten
 
   const GameScreen({
     super.key,
     required this.playerNames,
     required this.categoryFiles,
     required this.impostorCount,
+    required this.hintEnabled,
   });
 
   @override
@@ -59,9 +61,7 @@ class _GameScreenState extends State<GameScreen> {
         }
       }
     }
-    if (pairs.isEmpty) {
-      throw Exception(t('noWordHintPairs'));
-    }
+    if (pairs.isEmpty) throw Exception(t('noWordHintPairs'));
     allPairs = pairs;
 
     // Reihenfolge der Spieler und Startspieler zufällig
@@ -69,7 +69,7 @@ class _GameScreenState extends State<GameScreen> {
     startingPlayer = randomizedOrder[random.nextInt(randomizedOrder.length)];
 
     // Wort & Hint auswählen
-    final sel = allPairs[random.nextInt(allPairs.length)];
+    final sel          = allPairs[random.nextInt(allPairs.length)];
     final selectedWord = sel.key;
     final selectedHint = sel.value;
 
@@ -85,7 +85,12 @@ class _GameScreenState extends State<GameScreen> {
     for (int i = 0; i < widget.playerNames.length; i++) {
       final name = widget.playerNames[i];
       if (impostorIndices.contains(i)) {
-        playerWordMap[name] = "🕵️ ${t('imposter')}: $selectedHint";
+        // nur dann den Hint anhängen, wenn hintEnabled == true
+        if (widget.hintEnabled) {
+          playerWordMap[name] = "🕵️ ${t('imposter')}: $selectedHint";
+        } else {
+          playerWordMap[name] = "🕵️ ${t('imposter')}";
+        }
         impostorNames.add(name);
       } else {
         playerWordMap[name] = selectedWord;
@@ -107,17 +112,19 @@ class _GameScreenState extends State<GameScreen> {
       );
     }
 
-    final name = randomizedOrder[currentIndex];
-    final word = playerWordMap[name]!;
+    final name       = randomizedOrder[currentIndex];
+    final word       = playerWordMap[name]!;
     final isImpostor = word.startsWith("🕵️");
-    final isLastPlayer = currentIndex == randomizedOrder.length - 1;
+    final isLast     = currentIndex == randomizedOrder.length - 1;
 
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
         backgroundColor: primary,
-        title: Text("🕹️ ${t('appTitle')}",
-            style: const TextStyle(color: Colors.white, fontSize: 22)),
+        title: Text(
+          "🕹️ ${t('appTitle')}",
+          style: const TextStyle(color: Colors.white, fontSize: 22),
+        ),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -125,14 +132,18 @@ class _GameScreenState extends State<GameScreen> {
           padding: const EdgeInsets.all(24),
           child: showReady
               ? _buildReadyScreen()
-              : _buildPlayerScreen(name, word, isImpostor, isLastPlayer),
+              : _buildPlayerScreen(name, word, isImpostor, isLast),
         ),
       ),
     );
   }
 
   Widget _buildPlayerScreen(
-      String name, String word, bool isImpostor, bool isLastPlayer) {
+    String name,
+    String word,
+    bool isImpostor,
+    bool isLastPlayer,
+  ) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -149,7 +160,6 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ),
         const SizedBox(height: 40),
-        // Sichtbarkeits-Button
         ElevatedButton.icon(
           icon: Icon(
             wordVisible ? Icons.visibility_off : Icons.visibility,
@@ -174,7 +184,6 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ),
         const SizedBox(height: 24),
-        // Weiter-/Bestätigungs-Button
         ElevatedButton.icon(
           icon: const Icon(Icons.arrow_forward, size: 28),
           label: Padding(
@@ -193,7 +202,7 @@ class _GameScreenState extends State<GameScreen> {
               });
             } else {
               setState(() {
-                showReady = true;
+                showReady  = true;
                 wordVisible = false;
               });
             }
@@ -210,79 +219,72 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-
-Widget _buildReadyScreen() {
-  return Center(
-    child: Column(
-      // Damit die Column nur so hoch wie nötig ist
-      mainAxisSize: MainAxisSize.min,
-      // Vertikale Zentrierung innerhalb der Column
-      mainAxisAlignment: MainAxisAlignment.center,
-      // Horizontale Zentrierung der Kinder
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        ElevatedButton(
-          onPressed: () => setState(() => showImpostors = true),
-          child: Text(
-            t('revealImposter'),
-            style: const TextStyle(fontSize: 18),
-            textAlign: TextAlign.center,
+  Widget _buildReadyScreen() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: () => setState(() => showImpostors = true),
+            child: Text(
+              t('revealImposter'),
+              style: const TextStyle(fontSize: 18),
+              textAlign: TextAlign.center,
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: secondary,
+              foregroundColor: Colors.black,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
           ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: secondary,
-            foregroundColor: Colors.black,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-        const SizedBox(height: 16),
-        if (showImpostors && impostorNames.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          if (showImpostors && impostorNames.isNotEmpty) ...[
+            Text(
+              "${t('imposterIs')}: ${impostorNames.join(', ')}",
+              style:
+                  const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+          ],
           Text(
-            "${t('imposterIs')}: ${impostorNames.join(', ')}",
-            style: const TextStyle(
-                fontSize: 20, fontWeight: FontWeight.w600),
+            t('allPlayersReady'),
+            style:
+                const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
+          Text(
+            "🔔 $startingPlayer ${t('startsFirst')}",
+            style: TextStyle(
+                fontSize: 30, fontWeight: FontWeight.w700, color: primary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 48),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.home, size: 28),
+            label: Text(
+              t('backToMenu'),
+              style: const TextStyle(fontSize: 20),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primary,
+              foregroundColor: Colors.white,
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+            ),
+          ),
         ],
-        Text(
-          t('allPlayersReady'),
-          style: const TextStyle(
-              fontSize: 26, fontWeight: FontWeight.bold),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 24),
-        Text(
-          "🔔 $startingPlayer ${t('startsFirst')}",
-          style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.w700,
-              color: primary),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 48),
-        ElevatedButton.icon(
-          onPressed: () => Navigator.pop(context),
-          icon: const Icon(Icons.home, size: 28),
-          label: Text(
-            t('backToMenu'),
-            style: const TextStyle(fontSize: 20),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(
-                horizontal: 32, vertical: 18),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16)),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
+      ),
+    );
+  }
 
   Widget _buildCardContent(bool highlight, String? text) {
     const cardWidth = 300.0;
@@ -297,9 +299,8 @@ Widget _buildReadyScreen() {
             ? (highlight ? primary : Colors.white)
             : secondary,
         elevation: 10,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape:
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Center(

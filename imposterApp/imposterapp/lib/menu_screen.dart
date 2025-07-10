@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'category_selection_screen.dart';
 import 'game_screen.dart';
 import 'strings.dart';
@@ -15,6 +16,9 @@ class _MenuScreenState extends State<MenuScreen> {
   final List<String> _players = [];
   List<String> _selectedCategories = [];
   int _impostorCount = 1;
+  bool _hintEnabled = true;
+
+  late SharedPreferences _prefs;
 
   final Color primary = const Color(0xFFD11149);
   final Color secondary = const Color(0xFFE6C229);
@@ -27,19 +31,44 @@ class _MenuScreenState extends State<MenuScreen> {
     'fr': 'france',
   };
 
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    _prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _impostorCount = _prefs.getInt('impostorCount') ?? 1;
+      _hintEnabled = _prefs.getBool('hintEnabled') ?? true;
+      currentLanguage = _prefs.getString('language') ?? currentLanguage;
+    });
+  }
+
+  Future<void> _saveSettings() async {
+    await _prefs.setInt('impostorCount', _impostorCount);
+    await _prefs.setBool('hintEnabled', _hintEnabled);
+    await _prefs.setString('language', currentLanguage);
+  }
+
   void _changeLanguage(String lang) {
-    setState(() => currentLanguage = lang);
+    setState(() {
+      currentLanguage = lang;
+    });
   }
 
   void _startGame() {
     if (_players.length < 3) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(t('minPlayers'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t('minPlayers'))),
+      );
       return;
     }
     if (_selectedCategories.isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(t('selectAtLeastOneCategory'))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(t('selectAtLeastOneCategory'))),
+      );
       return;
     }
 
@@ -50,6 +79,7 @@ class _MenuScreenState extends State<MenuScreen> {
           playerNames: _players,
           categoryFiles: _selectedCategories,
           impostorCount: _impostorCount,
+          hintEnabled: _hintEnabled,
         ),
       ),
     );
@@ -65,10 +95,130 @@ class _MenuScreenState extends State<MenuScreen> {
     }
   }
 
+  void _openSettings() {
+    final maxImpostors = _players.length > 1 ? _players.length - 1 : 1;
+
+    // temporäre Kopien für das Modal
+    int tempImpostorCount = _impostorCount.clamp(1, maxImpostors);
+    bool tempHintEnabled = _hintEnabled;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Titel
+                    Text(
+                      t('settings'),
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Impostoren-Dropdown
+                    ListTile(
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      title: Text(
+                        t('numberOfImpostors'),
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      trailing: DropdownButton<int>(
+                        value: tempImpostorCount,
+                        onChanged: (v) {
+                          if (v != null) setModalState(() => tempImpostorCount = v);
+                        },
+                        items: List.generate(maxImpostors, (i) => i + 1)
+                            .map((n) => DropdownMenuItem(
+                                  value: n,
+                                  child: Text(
+                                    '$n',
+                                    style: const TextStyle(fontSize: 20),
+                                  ),
+                                ))
+                            .toList(),
+                        style: TextStyle(fontSize: 20, color: secondary),
+                        underline: const SizedBox(),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Hint-Switch
+                    SwitchListTile(
+                      contentPadding:
+                          const EdgeInsets.symmetric(horizontal: 16),
+                      title: Text(
+                        t('hintForImpostor'),
+                        style: const TextStyle(fontSize: 20),
+                      ),
+                      value: tempHintEnabled,
+                      onChanged: (v) => setModalState(() => tempHintEnabled = v),
+                      activeColor: secondary,
+                      inactiveThumbColor: Colors.grey,
+                      tileColor: Colors.white,
+                    ),
+                    const SizedBox(height: 32),
+
+                    // Speichern-Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 60,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // in den Haupt-State übernehmen
+                          setState(() {
+                            _impostorCount = tempImpostorCount;
+                            _hintEnabled = tempHintEnabled;
+                          });
+                          _saveSettings();
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: Text(
+                          t('save'),
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     final maxImpostors = _players.length > 1 ? _players.length - 1 : 1;
-    // Clamp impostorCount to valid range
     if (_impostorCount < 1) _impostorCount = 1;
     if (_impostorCount > maxImpostors) _impostorCount = maxImpostors;
 
@@ -76,30 +226,32 @@ class _MenuScreenState extends State<MenuScreen> {
       backgroundColor: background,
       appBar: AppBar(
         backgroundColor: primary,
-        title: Text('🎮 ${t('appTitle')}',
-            style: const TextStyle(color: Colors.white)),
+        leading: PopupMenuButton<String>(
+          tooltip: t('changeLanguage'),
+          icon: Image.asset(
+            'assets/flags/${_languageFlagAssets[currentLanguage]}.png',
+            width: 28,
+            height: 28,
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Icon(Icons.language, color: Colors.white),
+          ),
+          onSelected: (lang) {
+            _changeLanguage(lang);
+            _saveSettings();
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(value: 'en', child: _buildFlagMenuItem('uk', t('English'))),
+            PopupMenuItem(value: 'de', child: _buildFlagMenuItem('germany', t('Deutsch'))),
+            PopupMenuItem(value: 'es', child: _buildFlagMenuItem('spain', t('Español'))),
+            PopupMenuItem(value: 'fr', child: _buildFlagMenuItem('france', t('Français'))),
+          ],
+        ),
+        title: Text('🎮 ${t('appTitle')}', style: const TextStyle(color: Colors.white)),
         centerTitle: true,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: PopupMenuButton<String>(
-              tooltip: t('changeLanguage'),
-              icon: Image.asset(
-                'assets/flags/${_languageFlagAssets[currentLanguage]}.png',
-                width: 28,
-                height: 28,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) =>
-                    const Icon(Icons.language, color: Colors.white),
-              ),
-              onSelected: _changeLanguage,
-              itemBuilder: (context) => [
-                PopupMenuItem(value: 'en', child: _buildFlagMenuItem('uk', 'English')),
-                PopupMenuItem(value: 'de', child: _buildFlagMenuItem('germany', 'Deutsch')),
-                PopupMenuItem(value: 'es', child: _buildFlagMenuItem('spain', 'Español')),
-                PopupMenuItem(value: 'fr', child: _buildFlagMenuItem('france', 'Français')),
-              ],
-            ),
+          IconButton(
+            icon: const Icon(Icons.settings, size: 28),
+            onPressed: _openSettings,
           ),
         ],
       ),
@@ -109,8 +261,7 @@ class _MenuScreenState extends State<MenuScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("👥 ${t('addPlayer')}",
-                style: const TextStyle(
-                    fontSize: 22, fontWeight: FontWeight.bold)),
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -144,12 +295,11 @@ class _MenuScreenState extends State<MenuScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: secondary,
                     foregroundColor: Colors.black,
-                    padding: const EdgeInsets.all(14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                   	padding: const EdgeInsets.all(14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Icon(Icons.add, size: 24),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -166,9 +316,7 @@ class _MenuScreenState extends State<MenuScreen> {
                       side: BorderSide(color: primary, width: 1),
                     ),
                     deleteIcon: const Icon(Icons.close),
-                    onDeleted: () => setState(() {
-                      _players.remove(player);
-                    }),
+                    onDeleted: () => setState(() => _players.remove(player)),
                   );
                 }).toList(),
               ),
@@ -183,38 +331,12 @@ class _MenuScreenState extends State<MenuScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: secondary,
                       foregroundColor: Colors.black,
-                      padding:
-                          const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       textStyle: const TextStyle(fontSize: 18),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
                   ),
                 ),
-                if (_players.length > 1) ...[
-                  const SizedBox(width: 12),
-                  // New label for clarity
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: Text(
-                      t('imposter'),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  DropdownButton<int>(
-                    value: _impostorCount,
-                    onChanged: (value) {
-                      if (value != null) setState(() => _impostorCount = value);
-                    },
-                    items: List<DropdownMenuItem<int>>.generate(
-                      _players.length - 1,
-                      (i) => DropdownMenuItem(
-                        value: i + 1,
-                        child: Text('${i + 1}'),
-                      ),
-                    ),
-                  ),
-                ],
               ],
             ),
             const SizedBox(height: 12),
@@ -227,17 +349,15 @@ class _MenuScreenState extends State<MenuScreen> {
             Center(
               child: ElevatedButton.icon(
                 onPressed: _startGame,
+                icon: const Icon(Icons.play_arrow, size: 28),
                 label: Text(t('startGame')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 32, vertical: 24),
-                  minimumSize: const Size.fromHeight(100),
-                  textStyle: const TextStyle(
-                      fontSize: 24, fontWeight: FontWeight.bold),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                  minimumSize: const Size.fromHeight(64),
+                  textStyle: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 ),
               ),
             ),
@@ -250,14 +370,14 @@ class _MenuScreenState extends State<MenuScreen> {
   Widget _buildFlagMenuItem(String fileName, String label) {
     return Row(
       children: [
-        Image.asset(
+       	Image.asset(
           'assets/flags/$fileName.png',
           width: 32,
           height: 32,
           fit: BoxFit.contain,
           errorBuilder: (_, __, ___) => const Icon(Icons.language, size: 24),
         ),
-        const SizedBox(width: 32),
+        const SizedBox(width: 16),
         Text(label, style: const TextStyle(fontSize: 20)),
       ],
     );
