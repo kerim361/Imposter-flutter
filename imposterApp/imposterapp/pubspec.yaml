@@ -54,12 +54,11 @@ flutter:
 
 
   assets:
-    - assets/obst.txt
-    - assets/tiere.txt
-    - assets/berufe.txt
-    - assets/hint-obst.txt
-    - assets/hint-tiere.txt
-    - assets/hint-berufe.txt
+    - assets/en/
+    - assets/de/
+    - assets/es/
+    - assets/fr/
+
 
 
   # The following line ensures that the Material Icons font is

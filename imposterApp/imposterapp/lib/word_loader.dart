@@ -1,12 +1,23 @@
-import 'package:flutter/services.dart' show rootBundle;
+// lib/word_loader.dart
 
-Future<List<String>> loadWordsFromCategory(String categoryFile) async {
-  final content = await rootBundle.loadString('assets/$categoryFile');
-  return content.split('\n')
-    .map((e) => e.trim())
-    .where((e) => e.isNotEmpty)
-    .toList();
-    
+import 'dart:convert';
+import 'package:flutter/services.dart';
+import 'strings.dart'; // für currentLanguage
+
+Future<List<String>> loadCategoryFilesForLanguage() async {
+  final manifestContent = await rootBundle.loadString('AssetManifest.json');
+  final Map<String, dynamic> manifestMap = json.decode(manifestContent);
+
+  final prefix = 'assets/$currentLanguage/';
+  final categories = <String>{};
+
+  for (final path in manifestMap.keys) {
+    if (path.startsWith(prefix) &&
+        path.endsWith('.txt') &&
+        !path.contains('hint-')) {
+      categories.add(path.replaceFirst(prefix, ''));
+    }
+  }
+
+  return categories.toList();
 }
-
-
