@@ -54,10 +54,16 @@ flutter:
 
 
   assets:
-    - assets/en/
-    - assets/de/
-    - assets/es/
-    - assets/fr/
+      - assets/en/words-en.json
+      - assets/de/words-de.json
+      - assets/es/words-es.json
+      - assets/fr/words-fr.json
+      - assets/flags/germany.png
+      - assets/flags/uk.png
+      - assets/flags/france.png
+      - assets/flags/spain.png
+      - assets/imgs/card.png
+
 
 
 

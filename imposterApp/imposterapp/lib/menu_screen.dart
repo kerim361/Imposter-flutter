@@ -19,16 +19,30 @@ class _MenuScreenState extends State<MenuScreen> {
   final Color secondary = const Color(0xFFE6C229);
   final Color background = const Color(0xFFFFF3E9);
 
+  // Mapping Language-Code → Flag-Asset-Filename
+  final Map<String, String> _languageFlagAssets = {
+    'en': 'uk',       // assets/flags/uk.png
+    'de': 'germany',  // assets/flags/germany.png
+    'es': 'spain',    // assets/flags/spain.png
+    'fr': 'france',   // assets/flags/france.png
+  };
+
+  void _changeLanguage(String lang) {
+    setState(() {
+      currentLanguage = lang;
+    });
+  }
+
   void _startGame() {
     if (_players.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t('needPlayers'))),
+        SnackBar(content: Text(t('minPlayers'))),
       );
       return;
     }
     if (_selectedCategories.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t('needCategories'))),
+        SnackBar(content: Text(t('selectAtLeastOneCategory'))),
       );
       return;
     }
@@ -44,7 +58,7 @@ class _MenuScreenState extends State<MenuScreen> {
     );
   }
 
-  void _openCategorySelection() async {
+  Future<void> _openCategorySelection() async {
     final result = await Navigator.push<List<String>>(
       context,
       MaterialPageRoute(
@@ -54,12 +68,6 @@ class _MenuScreenState extends State<MenuScreen> {
     if (result != null && result.isNotEmpty) {
       setState(() => _selectedCategories = result);
     }
-  }
-
-  void _changeLanguage(String lang) {
-    setState(() {
-      currentLanguage = lang;
-    });
   }
 
   @override
@@ -72,17 +80,26 @@ class _MenuScreenState extends State<MenuScreen> {
             style: const TextStyle(color: Colors.white)),
         centerTitle: true,
         actions: [
-          PopupMenuButton<String>(
-            tooltip: t('language'),
-            icon: const Text("🌐", style: TextStyle(fontSize: 22)),
-            onSelected: _changeLanguage,
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'en', child: Text('🇬🇧 English')),
-              PopupMenuItem(value: 'de', child: Text('🇩🇪 Deutsch')),
-              PopupMenuItem(value: 'es', child: Text('🇪🇸 Español')),
-              PopupMenuItem(value: 'fr', child: Text('🇫🇷 Français')),
-            ],
-          )
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: PopupMenuButton<String>(
+              tooltip: t('changeLanguage'),
+              icon: Image.asset(
+                'assets/flags/${_languageFlagAssets[currentLanguage]}.png',
+                width: 28,
+                height: 28,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => const Icon(Icons.language, color: Colors.white),
+              ),
+              onSelected: (lang) => _changeLanguage(lang),
+              itemBuilder: (context) => [
+                PopupMenuItem(value: 'en', child: _buildFlagMenuItem('uk', 'English')),
+                PopupMenuItem(value: 'de', child: _buildFlagMenuItem('germany', 'Deutsch')),
+                PopupMenuItem(value: 'es', child: _buildFlagMenuItem('spain', 'Español')),
+                PopupMenuItem(value: 'fr', child: _buildFlagMenuItem('france', 'Français')),
+              ],
+            ),
+          ),
         ],
       ),
       body: Padding(
@@ -99,7 +116,7 @@ class _MenuScreenState extends State<MenuScreen> {
                   child: TextField(
                     controller: _playerController,
                     decoration: InputDecoration(
-                      hintText: t('enterPlayerName'),
+                      hintText: t('playerName'),
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
@@ -160,8 +177,7 @@ class _MenuScreenState extends State<MenuScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: secondary,
                 foregroundColor: Colors.black,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 textStyle: const TextStyle(fontSize: 18),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -171,23 +187,22 @@ class _MenuScreenState extends State<MenuScreen> {
             const SizedBox(height: 12),
             if (_selectedCategories.isNotEmpty)
               Text(
-                '✅ ${t('selectedCategories')}: ${_selectedCategories.map((e) => e.replaceAll(".txt", "")).join(", ")}',
+                '✅ ${_selectedCategories.join(', ')}',
                 style: const TextStyle(fontSize: 16),
               ),
-            const Spacer(),
+            const SizedBox(height: 28),
             Center(
               child: ElevatedButton.icon(
                 onPressed: _startGame,
-                icon: const Icon(Icons.play_arrow),
                 label: Text(t('startGame')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primary,
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                  textStyle: const TextStyle(fontSize: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                  minimumSize: const Size.fromHeight(100),
+                  textStyle: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                 ),
               ),
@@ -195,6 +210,22 @@ class _MenuScreenState extends State<MenuScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildFlagMenuItem(String fileName, String label) {
+    return Row(
+      children: [
+        Image.asset(
+          'assets/flags/$fileName.png',
+          width: 32,
+          height: 32,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => const Icon(Icons.language, size: 24),
+        ),
+        const SizedBox(width: 32),
+        Text(label, style: const TextStyle(fontSize: 20)),
+      ],
     );
   }
 }
