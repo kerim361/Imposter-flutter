@@ -177,7 +177,6 @@ class _CategorySelectionScreenState extends State<CategorySelectionScreen> {
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () => Navigator.pop(context, selected),
-                    icon: const Icon(Icons.done),
                     label: Text(
                       t('confirmReady'),
                       style: const TextStyle(fontSize: 18),

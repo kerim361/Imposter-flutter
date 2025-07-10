@@ -14,36 +14,32 @@ class _MenuScreenState extends State<MenuScreen> {
   final TextEditingController _playerController = TextEditingController();
   final List<String> _players = [];
   List<String> _selectedCategories = [];
+  int _impostorCount = 1;
 
   final Color primary = const Color(0xFFD11149);
   final Color secondary = const Color(0xFFE6C229);
   final Color background = const Color(0xFFFFF3E9);
 
-  // Mapping Language-Code → Flag-Asset-Filename
   final Map<String, String> _languageFlagAssets = {
-    'en': 'uk',       // assets/flags/uk.png
-    'de': 'germany',  // assets/flags/germany.png
-    'es': 'spain',    // assets/flags/spain.png
-    'fr': 'france',   // assets/flags/france.png
+    'en': 'uk',
+    'de': 'germany',
+    'es': 'spain',
+    'fr': 'france',
   };
 
   void _changeLanguage(String lang) {
-    setState(() {
-      currentLanguage = lang;
-    });
+    setState(() => currentLanguage = lang);
   }
 
   void _startGame() {
     if (_players.length < 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t('minPlayers'))),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(t('minPlayers'))));
       return;
     }
     if (_selectedCategories.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(t('selectAtLeastOneCategory'))),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(t('selectAtLeastOneCategory'))));
       return;
     }
 
@@ -53,6 +49,7 @@ class _MenuScreenState extends State<MenuScreen> {
         builder: (_) => GameScreen(
           playerNames: _players,
           categoryFiles: _selectedCategories,
+          impostorCount: _impostorCount,
         ),
       ),
     );
@@ -61,9 +58,7 @@ class _MenuScreenState extends State<MenuScreen> {
   Future<void> _openCategorySelection() async {
     final result = await Navigator.push<List<String>>(
       context,
-      MaterialPageRoute(
-        builder: (_) => const CategorySelectionScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const CategorySelectionScreen()),
     );
     if (result != null && result.isNotEmpty) {
       setState(() => _selectedCategories = result);
@@ -72,6 +67,11 @@ class _MenuScreenState extends State<MenuScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final maxImpostors = _players.length > 1 ? _players.length - 1 : 1;
+    // Clamp impostorCount to valid range
+    if (_impostorCount < 1) _impostorCount = 1;
+    if (_impostorCount > maxImpostors) _impostorCount = maxImpostors;
+
     return Scaffold(
       backgroundColor: background,
       appBar: AppBar(
@@ -89,9 +89,10 @@ class _MenuScreenState extends State<MenuScreen> {
                 width: 28,
                 height: 28,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => const Icon(Icons.language, color: Colors.white),
+                errorBuilder: (_, __, ___) =>
+                    const Icon(Icons.language, color: Colors.white),
               ),
-              onSelected: (lang) => _changeLanguage(lang),
+              onSelected: _changeLanguage,
               itemBuilder: (context) => [
                 PopupMenuItem(value: 'en', child: _buildFlagMenuItem('uk', 'English')),
                 PopupMenuItem(value: 'de', child: _buildFlagMenuItem('germany', 'Deutsch')),
@@ -108,7 +109,8 @@ class _MenuScreenState extends State<MenuScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("👥 ${t('addPlayer')}",
-                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                style: const TextStyle(
+                    fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
             Row(
               children: [
@@ -144,8 +146,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     foregroundColor: Colors.black,
                     padding: const EdgeInsets.all(14),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   child: const Icon(Icons.add, size: 24),
                 )
@@ -165,24 +166,56 @@ class _MenuScreenState extends State<MenuScreen> {
                       side: BorderSide(color: primary, width: 1),
                     ),
                     deleteIcon: const Icon(Icons.close),
-                    onDeleted: () => setState(() => _players.remove(player)),
+                    onDeleted: () => setState(() {
+                      _players.remove(player);
+                    }),
                   );
                 }).toList(),
               ),
             const SizedBox(height: 28),
-            ElevatedButton.icon(
-              onPressed: _openCategorySelection,
-              icon: const Icon(Icons.category),
-              label: Text(t('selectCategory')),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: secondary,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                textStyle: const TextStyle(fontSize: 18),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _openCategorySelection,
+                    icon: const Icon(Icons.category),
+                    label: Text(t('selectCategory')),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: secondary,
+                      foregroundColor: Colors.black,
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      textStyle: const TextStyle(fontSize: 18),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
                 ),
-              ),
+                if (_players.length > 1) ...[
+                  const SizedBox(width: 12),
+                  // New label for clarity
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Text(
+                      t('imposter'),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  DropdownButton<int>(
+                    value: _impostorCount,
+                    onChanged: (value) {
+                      if (value != null) setState(() => _impostorCount = value);
+                    },
+                    items: List<DropdownMenuItem<int>>.generate(
+                      _players.length - 1,
+                      (i) => DropdownMenuItem(
+                        value: i + 1,
+                        child: Text('${i + 1}'),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: 12),
             if (_selectedCategories.isNotEmpty)
@@ -198,12 +231,13 @@ class _MenuScreenState extends State<MenuScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 32, vertical: 24),
                   minimumSize: const Size.fromHeight(100),
-                  textStyle: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  textStyle: const TextStyle(
+                      fontSize: 24, fontWeight: FontWeight.bold),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                      borderRadius: BorderRadius.circular(20)),
                 ),
               ),
             ),
